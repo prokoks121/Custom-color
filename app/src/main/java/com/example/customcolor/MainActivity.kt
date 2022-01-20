@@ -5,16 +5,19 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.*
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +40,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CustomColorTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
                     ActionButtons(list){
                         Log.d("Provera", list.size.toString())
@@ -54,19 +56,16 @@ class MainActivity : ComponentActivity() {
 fun DefaultPreview() {
 
     val list = mutableStateListOf(
-        mutableStateListOf(Color.Green,Color.Red,Color.Blue),
-        mutableStateListOf(Color.Green,Color.Red,Color.Blue),
-        mutableStateListOf(Color.Blue)
+        mutableStateListOf(Color.Green)
     )
     CustomColorTheme {
         ActionButtons(list){
-
         }
     }
 }
 
 @Composable
-fun ActionButtons(list: SnapshotStateList<SnapshotStateList<Color>>,provera:()->Unit) {
+fun ActionButtons(list: SnapshotStateList<SnapshotStateList<Color>>, provera:()->Unit) {
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         item {
             Row(modifier = Modifier.fillMaxWidth(),
@@ -92,7 +91,8 @@ fun ActionButtons(list: SnapshotStateList<SnapshotStateList<Color>>,provera:()->
                     .background(Color(0xFFB565A7), shape = RoundedCornerShape(5.dp))
                     .clickable {
                         if (!list.isEmpty())
-                            list.removeLast() }
+                            list.removeLast()
+                    }
                     , contentAlignment = Alignment.Center) {
                     Text(fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -160,6 +160,7 @@ Row() {
     brojac = {
         colors.size
     })
+
         Colors(colors)
 
 }
@@ -242,24 +243,46 @@ Box(modifier = Modifier
     .height(69.dp)) {
     FlowColumn() {
         for (color in colors) {
-            SingleColor(color)
-
+            SingleColor(color = color)
         }
     }
 }
-
 }
 
 
 @Composable
 fun SingleColor(color:Color){
+    val backgroundColor by animateColorAsState(targetValue = color,
+    animationSpec = tween(
+        durationMillis = 500,
+        easing = FastOutSlowInEasing
+    ))
+
+
+    var visible by remember{ mutableStateOf(false)}
+
+    DisposableEffect(true){
+        visible = true
+        Log.d("Provera","radi $visible")
+        onDispose {
+            visible = false
+        }
+    }
+AnimatedVisibility(visible = visible,
+    enter = slideInVertically(
+        initialOffsetY = { fullHeight -> -fullHeight },
+        animationSpec = tween(durationMillis = 150, easing = LinearOutSlowInEasing)
+    )) {
+
     Box(modifier = Modifier
         .padding(2.dp)
         .height(30.dp)
         .width(30.dp)
-        .background(color = color, shape = RoundedCornerShape(5.dp))
+        .background(color = backgroundColor, shape = RoundedCornerShape(5.dp))
         .padding(5.dp)
     )
+}
+
 }
 
 private fun getRandomColor(list: SnapshotStateList<Color> = mutableStateListOf()):Color{
